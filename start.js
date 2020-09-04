@@ -33,4 +33,43 @@ var server = app.listen(app.get("port"), function(){
 // =================================== //
 // THIS TO BECOME A ROUTES FOLDER/FILE //
 // =================================== //
+
+// ============ //
+// 2 STEP OAUTH //
+// ============ //
 var FORGE_CLIENT_ID = process.env.FORGE_CLIENT_ID;
+var FORGE_CLIENT_SECRET = process.env.FORGE_CLIENT_SECRET;
+
+var accessToken = "";
+var scopes = "data:read data:write data:create bucket:create bucket:read"; // not sure what this is, is it forge specific?
+const queryStr = require("querystring");
+
+// ======================= //
+// ROUTES - manual example //
+// ======================= //
+
+// oauth api routes
+app.get("/api/forge/oauth", function(req, res) {
+    axios({
+        method: "POST",
+        url: "https://developer.api.autodesk.com/authentication/v2/authenticate",
+        headers: {
+            "content-type": "application/x-www-form-urlencoded"
+        },
+        data: queryStr.stringify({
+            client_id: FORGE_CLIENT_ID,
+            client_secret: FORGE_CLIENT_SECRET,
+            grant_type: "client_credentials",
+            scope: scopes
+        })
+    }).then(function(response) {
+        // success
+        accessToken = response.data.accessToken;
+        console.log(response);
+        res.redirect("/api/forge/datamanagement/bucket/create");
+    }).catch(function(error) {
+        // failed
+        console.log(error);
+        res.send("Failed to authenticate")
+    });
+});
