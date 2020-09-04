@@ -1,0 +1,19 @@
+{
+  "name": "forgemepcloud",
+  "version": "1.0.0",
+  "description": "Revit MEP Design Automation in the cloud using Forge APIs.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alvaroluna/ForgeMEPCloud.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alvaroluna/ForgeMEPCloud/issues"
+  },
+  "homepage": "https://github.com/alvaroluna/ForgeMEPCloud#readme"
+}
