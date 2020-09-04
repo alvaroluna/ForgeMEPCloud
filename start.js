@@ -15,7 +15,11 @@ var bodyParser = require("body-parser"); // receive json data
 // setup express web server
 var app = express();
 app.use(bodyParser.json());
-app.use(express.static(__dirname + "/assets/html")); // location of html files...this is unfamiliar look into it
+
+// 'static' files are not part of the url, so you can have express look for files on your computer/server
+// app.use(express.static(__dirname + "/assets/html")); // location of folder with html files...this is unfamiliar look into it
+// app.use(express.static(__dirname + "/assets/css"));
+app.use(express.static("public"));
 
 // setup server to listen to port 3000
 app.set("port", 3000);
