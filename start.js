@@ -127,7 +127,7 @@ app.get("/api/forge/datamanagement/bucket/detail", function(req, res) {
     }).then(function(response) {
         // success
         console.log(response);
-        res.redirect("upload.html"); // this is the html that has been created for the app
+        res.redirect("/html/upload.html"); // assume it is looking for the public folder, bc that is the static directory
     }).catch(function(error) {
         // failed
         console.log(error);
