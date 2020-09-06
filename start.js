@@ -134,3 +134,77 @@ app.get("/api/forge/datamanagement/bucket/detail", function(req, res) {
         res.send("Failed to verify the new bucket");
     });
 });
+
+// save file - converting the source into a Base64-encoded string
+var Buffer = require("buffer").Buffer;
+String.prototype.toBase64 = function() {
+    // buffer is part of node.js to enable the interaction with octet streams
+    // in TCP streams, file system operations, and other contexts
+    return new Buffer(this).toString("base64");
+};
+
+var multer = require("multer"); // used to handle file upload
+var upload = multer({dest: "tmp/"}); // save file to the local /tmp folder
+
+// Route - save file - this is post bc we are saving data; others are getting info about data that is put through axios in the same operation
+app.post("/api/forge/datamanagement/bucket/upload", upload.single("fileToUpload"), function(req, res) {
+    var fs = require("fs"); // node.js file system for reading files
+    fs.readFile(req.file.path, function(err, filecontent) {
+        axios({
+            method: "PUT",
+            url: "https://developer.api.autodesk.com/oss/v2/buckets/" + encodeURIComponent(bucketKey) + "/objects/" + encodeURIComponent(req.file.originalname),
+            headers: {
+                Authorization: "Bearer " + access_token,
+                "Content-Disposition": req.file.originalname,
+                "Content-Length": filecontent.length
+            },
+            data: filecontent
+        }).then(function(response) {
+            // success 
+            console.log(response);
+            var urn = response.data.objectId.toBase64();
+            res.redirect("/api/forge/modelderivative" + urn);
+        }).catch(function(error) {
+            // failed
+            console.log(error);
+            res.send("Failed to create a new object in the bucket")
+        });
+    });
+});
+
+// Route - translation uploaded file to svf format
+app.get("/api/forge/modelderivative/:urn", function(req, res) {
+    var urn = req.params.urn;
+    var format_type = "svf";
+    var format_views = ["2d", "3d"];
+
+    axios({
+        method: "POST",
+        url: "https://developer.api.autodesk.com/modelderivative/v2/designdata/job",
+        headers: {
+            "content-type": "application/json",
+            Authorization: "Bearer " + access_token
+        },
+        data: JSON.stringify({
+            "input": {
+                "urn": urn
+            },
+            "output": {
+                "formats": [
+                    {
+                        "type": format_type,
+                        "views": format_views
+                    }
+                ]
+            }
+        })
+    }).then(function(response) {
+        // success
+        console.log(response);
+        res.redirect("/html/view.html?urn=" + urn);
+    }).catch(function(error) {
+        // failed
+        console.log(error);
+        res.send("Error at Model Derivative job")
+    });
+});
