@@ -50,7 +50,7 @@ const queryStr = require("querystring");
 // ROUTES - app api routes that call forge api's using axios //
 // ========================================================= //
 
-// Route - oauth api
+// Route - oauth api - triggered after user clicks the main button in index.html 
 app.get("/api/forge/oauth", function(req, res) {
     // request body and header data requirements is found in
     // the forge api documentation for each module/api
@@ -74,8 +74,34 @@ app.get("/api/forge/oauth", function(req, res) {
         res.redirect("/api/forge/datamanagement/bucket/create"); // api call sends app to this address
     }).catch(function(error) {
         // failed
-        // console.log(error);
+        console.log(error);
         res.send("Failed to authenticate")
+    });
+});
+
+// Route - read-only access token
+app.get("/api/forge/oauth/public", function(req, res) {
+    // limit public token to viewer read only
+    axios({
+        method: "POST",
+        url: "https://developer.api.autodesk.com/authentication/v1/authenticate",
+        headers: {
+            "content-type": "application/x-www-form-urlencoded"
+        },
+        data: queryStr.stringify({
+            client_id: FORGE_CLIENT_ID,
+            client_secret: FORGE_CLIENT_SECRET,
+            grant_type: "client_credentials",
+            scope: "viewables:read"
+        })
+    }).then(function(response) {
+        // success
+        console.log(response);
+        res.json({access_token: response.data.access_token, expires_on: response.data.expires_in});
+    }).catch(function(error) {
+        // failed
+        console.log(error);
+        res.status(500).json(error);
     });
 });
 
@@ -127,6 +153,7 @@ app.get("/api/forge/datamanagement/bucket/detail", function(req, res) {
     }).then(function(response) {
         // success
         console.log(response);
+        console.log(access_token);
         res.redirect("/html/upload.html"); // assume it is looking for the public folder, bc that is the static directory
     }).catch(function(error) {
         // failed
@@ -148,7 +175,9 @@ var upload = multer({dest: "tmp/"}); // save file to the local /tmp folder
 
 // Route - save file - this is post bc we are saving data; others are getting info about data that is put through axios in the same operation
 app.post("/api/forge/datamanagement/bucket/upload", upload.single("fileToUpload"), function(req, res) {
+    
     var fs = require("fs"); // node.js file system for reading files
+    
     fs.readFile(req.file.path, function(err, filecontent) {
         axios({
             method: "PUT",
@@ -163,7 +192,8 @@ app.post("/api/forge/datamanagement/bucket/upload", upload.single("fileToUpload"
             // success 
             console.log(response);
             var urn = response.data.objectId.toBase64();
-            res.redirect("/api/forge/modelderivative" + urn);
+            console.log(urn);
+            res.redirect("/api/forge/modelderivative/" + urn);
         }).catch(function(error) {
             // failed
             console.log(error);
@@ -201,7 +231,7 @@ app.get("/api/forge/modelderivative/:urn", function(req, res) {
     }).then(function(response) {
         // success
         console.log(response);
-        res.redirect("/html/view.html?urn=" + urn);
+        res.redirect("/html/viewer.html?urn=" + urn);
     }).catch(function(error) {
         // failed
         console.log(error);
